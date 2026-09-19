@@ -1,0 +1,79 @@
+Chunker          : HeadingChunker {'max_chunk_size': 250, 'prepend_title': True}
+Embedding backend: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+LLM              : extractive-demo
+Corpus           : data\university — 9 tài liệu, 202 chunk, độ dài TB 266 ký tự
+
+=== Q1: Học bổng Vallet sau đại học năm 2026 có bao nhiêu suất và mỗi suất trị giá bao nhiêu?
+    Gold: 42 suất, mỗi suất 34.000.000 VNĐ  [doc: vallet-hoc-bong-sau-dai-hoc, key: '34.000.000']
+    Filter: None
+    1. score=0.861  doc_id=vallet-hoc-bong-sau-dai-hoc  (vallet-hoc-bong-sau-dai-hoc#9)
+       [Thông báo triển khai chương trình học bổng Vallet dành cho học viên sau đại học miền Bắc năm 2026] ## 2. Giá trị và số lượng học bổng - Số ...
+    2. score=0.853  doc_id=vallet-hoc-bong-sau-dai-hoc  (vallet-hoc-bong-sau-dai-hoc#14)
+       [Thông báo triển khai chương trình học bổng Vallet dành cho học viên sau đại học miền Bắc năm 2026] ## 4. Hồ sơ đăng ký - Chứng nhận thành t...
+    3. score=0.849  doc_id=vallet-hoc-bong-sau-dai-hoc  (vallet-hoc-bong-sau-dai-hoc#3)
+       # Thông báo triển khai chương trình học bổng Vallet dành cho học viên sau đại học miền Bắc năm 2026 báo triển khai Chương trình học bổng Val...
+    -> gold doc trong top-3: CÓ | đáp án trong ngữ cảnh: CÓ | điểm: 2/2
+    Agent: [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: vallet-hoc-bong-sau-dai-hoc) [Thông báo triển khai chương trình học bổng Vallet dành cho học viên sau đại học miền Bắc năm 2026] ## 2. Giá trị và số lượng học bổng - Số lượng: 42 suất, dành cho Học viên cao học và Nghiên cứu sinh. - Giá trị mỗi suất: 34.000.000 VNĐ/suất (Ba mươi bốn triệ
+
+=== Q2: Học bổng Vững tương lai loại A trị giá bao nhiêu và dành cho ai?
+    Gold: 130 suất, 20.000.000 VNĐ/suất; HSSV đạt chuẩn loại B và có thành tích xuất sắc, tiêu biểu / thủ khoa đầu vào / hoàn cảnh đặc biệt khó khăn  [doc: neu-hoc-bong-vung-tuong-lai-2025-2026, key: '20.000.000']
+    Filter: None
+    1. score=0.838  doc_id=neu-hoc-bong-vung-tuong-lai-2025-2026  (neu-hoc-bong-vung-tuong-lai-2025-2026#5)
+       [Triển khai và thu hồ sơ học bổng "Vững tương lai" năm học 2025 - 2026] ## Hạng mục và giá trị học bổng (810 suất) - 590 suất học bổng thườn...
+    2. score=0.814  doc_id=hsb-hoc-bong-tan-sinh-vien-2026  (hsb-hoc-bong-tan-sinh-vien-2026#3)
+       [Học bổng cho các chương trình đại học 2026 (HSB - ĐHQGHN)] ## 1. Học bổng cho các chương trình chính quy | 15.000.000 VNĐ | 10 suất (chung ...
+    3. score=0.798  doc_id=hsb-hoc-bong-tan-sinh-vien-2026  (hsb-hoc-bong-tan-sinh-vien-2026#12)
+       [Học bổng cho các chương trình đại học 2026 (HSB - ĐHQGHN)] ## 1. Học bổng cho các chương trình chính quy - Thành tích ngoại khóa (ƯU TIÊN):...
+    -> gold doc trong top-3: CÓ | đáp án trong ngữ cảnh: KHÔNG | điểm: 0/2
+    Agent: [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: neu-hoc-bong-vung-tuong-lai-2025-2026) [Triển khai và thu hồ sơ học bổng "Vững tương lai" năm học 2025 - 2026] ## Hạng mục và giá trị học bổng (810 suất) - 590 suất học bổng thường niên, gồm:
+
+=== Q3: Điều kiện điểm học tập để xét học bổng TOTO ở Đại học Ngoại thương là gì?
+    Gold: Điểm TBC năm học 2025-2026 từ 7.0/10 hoặc 2.8/4 trở lên; tích lũy tối thiểu 28 tín chỉ/năm học  [doc: ftu-hoc-bong-toto-2026, key: '28 tín chỉ']
+    Filter: None
+    1. score=0.694  doc_id=ftu-hoc-bong-toto-2026  (ftu-hoc-bong-toto-2026#4)
+       [Thông báo xét chọn học bổng Công ty TNHH TOTO Việt Nam năm 2026] ## Đối tượng - Sinh viên các chương trình đào tạo trình độ đại học hình th...
+    2. score=0.662  doc_id=hsb-hoc-bong-tan-sinh-vien-2026  (hsb-hoc-bong-tan-sinh-vien-2026#15)
+       [Học bổng cho các chương trình đại học 2026 (HSB - ĐHQGHN)] ### 1.2 Học bổng dành cho Thủ khoa và Á khoa Trường hợp các thí sinh được xét họ...
+    3. score=0.655  doc_id=hsb-hoc-bong-tan-sinh-vien-2026  (hsb-hoc-bong-tan-sinh-vien-2026#12)
+       [Học bổng cho các chương trình đại học 2026 (HSB - ĐHQGHN)] ## 1. Học bổng cho các chương trình chính quy - Thành tích ngoại khóa (ƯU TIÊN):...
+    -> gold doc trong top-3: CÓ | đáp án trong ngữ cảnh: KHÔNG | điểm: 0/2
+    Agent: [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: ftu-hoc-bong-toto-2026) [Thông báo xét chọn học bổng Công ty TNHH TOTO Việt Nam năm 2026] ## Đối tượng - Sinh viên các chương trình đào tạo trình độ đại học hình thức chính quy. - Sinh viên có hoàn cảnh khó khăn hoặc bản thân sinh viên là người khuyết tật. - Sinh viên chưa nhận học bổng
+
+=== Q4: Khi nào UEH ra quyết định cấp học bổng khuyến khích học tập học kỳ đầu năm 2026?
+    Gold: 18/5/2026 (học kỳ cuối năm 2026: 10/11/2026)  [doc: ueh-ke-hoach-xet-hoc-bong-2026, key: '18/5/2026']
+    Filter: None
+    1. score=0.811  doc_id=ueh-ke-hoach-xet-hoc-bong-2026  (ueh-ke-hoach-xet-hoc-bong-2026#1)
+       # Kế hoạch triển khai công tác xét học bổng UEH năm 2026 Căn cứ khung thời gian đào tạo năm 2026, UEH ban hành kế hoạch xét các học bổng trọ...
+    2. score=0.800  doc_id=ueh-ke-hoach-xet-hoc-bong-2026  (ueh-ke-hoach-xet-hoc-bong-2026#19)
+       [Kế hoạch triển khai công tác xét học bổng UEH năm 2026] ## 3. Học bổng Hỗ trợ học tập (Liên thông chính quy, Vừa làm vừa học) khóa học...
+    3. score=0.777  doc_id=ueh-ke-hoach-xet-hoc-bong-2026  (ueh-ke-hoach-xet-hoc-bong-2026#17)
+       [Kế hoạch triển khai công tác xét học bổng UEH năm 2026] ## 3. Học bổng Hỗ trợ học tập (Liên thông chính quy, Vừa làm vừa học) ### 3.1. Đối ...
+    -> gold doc trong top-3: CÓ | đáp án trong ngữ cảnh: KHÔNG | điểm: 0/2
+    Agent: [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: ueh-ke-hoach-xet-hoc-bong-2026) # Kế hoạch triển khai công tác xét học bổng UEH năm 2026 Căn cứ khung thời gian đào tạo năm 2026, UEH ban hành kế hoạch xét các học bổng trọng tâm trong năm 2026. Ký hiệu: HKĐ2026 = học kỳ đầu năm 2026, HKC2026 = học kỳ cuối năm 2026. Các mốc thời gian đượ
+
+=== Q5: Học bổng khuyến khích học tập ở VIMARU được xét như thế nào?
+    Gold: Loại Khá: 2.50 ≤ ĐTBHB < 3.20, rèn luyện từ 70; Giỏi: 3.20 ≤ ĐTBHB < 3.60, từ 80; Xuất sắc: ĐTBHB ≥ 3.60, từ 90 đến 100  [doc: vimaru-hbkkht-tieu-chuan-sinh-vien, key: '3.20']
+    Filter: {'audience': 'student'}
+    1. score=0.739  doc_id=vimaru-hbkkht-tieu-chuan-sinh-vien  (vimaru-hbkkht-tieu-chuan-sinh-vien#0)
+       # Tiêu chuẩn xét học bổng khuyến khích học tập (HBKKHT) cho sinh viên Nguồn: "Quy trình cấp học bổng khuyến khích học tập cho sinh viên", Vi...
+    2. score=0.685  doc_id=hsb-hoc-bong-tan-sinh-vien-2026  (hsb-hoc-bong-tan-sinh-vien-2026#12)
+       [Học bổng cho các chương trình đại học 2026 (HSB - ĐHQGHN)] ## 1. Học bổng cho các chương trình chính quy - Thành tích ngoại khóa (ƯU TIÊN):...
+    3. score=0.678  doc_id=vimaru-hbkkht-tieu-chuan-sinh-vien  (vimaru-hbkkht-tieu-chuan-sinh-vien#4)
+       [Tiêu chuẩn xét học bổng khuyến khích học tập (HBKKHT) cho sinh viên] ## Phạm vi và căn cứ giáo dục quốc dân....
+    -> gold doc trong top-3: CÓ | đáp án trong ngữ cảnh: KHÔNG | điểm: 0/2
+    Agent: [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: vimaru-hbkkht-tieu-chuan-sinh-vien) # Tiêu chuẩn xét học bổng khuyến khích học tập (HBKKHT) cho sinh viên Nguồn: "Quy trình cấp học bổng khuyến khích học tập cho sinh viên", Viện Cơ khí, Trường Đại học Hàng hải Việt Nam (VIMARU)
+
+    --- A/B: cùng câu hỏi, KHÔNG filter ---
+    1. score=0.739  doc_id=vimaru-hbkkht-quy-trinh-xet-duyet  (vimaru-hbkkht-quy-trinh-xet-duyet#0)
+       # Quy trình xét duyệt học bổng khuyến khích học tập (HBKKHT) – phần dành cho cán bộ Nguồn: "Quy trình cấp học bổng khuyến khích học tập cho ...
+    2. score=0.739  doc_id=vimaru-hbkkht-tieu-chuan-sinh-vien  (vimaru-hbkkht-tieu-chuan-sinh-vien#0)
+       # Tiêu chuẩn xét học bổng khuyến khích học tập (HBKKHT) cho sinh viên Nguồn: "Quy trình cấp học bổng khuyến khích học tập cho sinh viên", Vi...
+    3. score=0.685  doc_id=hsb-hoc-bong-tan-sinh-vien-2026  (hsb-hoc-bong-tan-sinh-vien-2026#12)
+       [Học bổng cho các chương trình đại học 2026 (HSB - ĐHQGHN)] ## 1. Học bổng cho các chương trình chính quy - Thành tích ngoại khóa (ƯU TIÊN):...
+    -> không filter: gold doc trong top-3: CÓ | đáp án trong ngữ cảnh: KHÔNG | điểm: 0/2
+    -> top-3 có filter và không filter KHÁC NHAU
+
+=== TỔNG KẾT
+    Chấm theo doc_id (gold doc trong top-3)   : 5/5
+    Chấm theo nội dung (đáp án trong ngữ cảnh): 1/5
+    Điểm retrieval (thang 2đ/câu)             : 2/10

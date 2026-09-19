@@ -47,8 +47,12 @@ class SentenceChunker:
         self.max_sentences_per_chunk = max(1, max_sentences_per_chunk)
 
     def chunk(self, text: str) -> list[str]:
-        # TODO: split into sentences, group into chunks
-        raise NotImplementedError("Implement SentenceChunker.chunk")
+        if not text or not text.strip():
+            return []
+        # Lookbehind: cắt SAU dấu câu nên dấu câu vẫn nằm lại cuối câu
+        sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
+        step = self.max_sentences_per_chunk
+        return [" ".join(sentences[i : i + step]) for i in range(0, len(sentences), step)]
 
 
 class RecursiveChunker:
@@ -66,12 +70,45 @@ class RecursiveChunker:
         self.chunk_size = chunk_size
 
     def chunk(self, text: str) -> list[str]:
-        # TODO: implement recursive splitting strategy
-        raise NotImplementedError("Implement RecursiveChunker.chunk")
+        if not text or not text.strip():
+            return []
+        return self._split(text, self.separators)
 
     def _split(self, current_text: str, remaining_separators: list[str]) -> list[str]:
-        # TODO: recursive helper used by RecursiveChunker.chunk
-        raise NotImplementedError("Implement RecursiveChunker._split")
+        # Base case 1: đã đủ nhỏ
+        if len(current_text) <= self.chunk_size:
+            return [current_text.strip()] if current_text.strip() else []
+        # Base case 2: hết separator -> cắt cứng theo chunk_size
+        if not remaining_separators:
+            pieces = [current_text[i : i + self.chunk_size] for i in range(0, len(current_text), self.chunk_size)]
+            return [piece.strip() for piece in pieces if piece.strip()]
+
+        separator, rest = remaining_separators[0], remaining_separators[1:]
+        # Base case 3: separator rỗng nghĩa là cắt theo ký tự
+        if separator == "":
+            return self._split(current_text, [])
+        if separator not in current_text:
+            return self._split(current_text, rest)
+
+        chunks: list[str] = []
+        buffer = ""
+        for piece in current_text.split(separator):
+            candidate = piece if not buffer else buffer + separator + piece
+            if len(candidate) <= self.chunk_size:
+                # Gom lên: nối mảnh nhỏ liền kề tới sát chunk_size
+                buffer = candidate
+                continue
+            if buffer:
+                chunks.append(buffer)
+            if len(piece) > self.chunk_size:
+                # Đệ quy xuống: mảnh vẫn quá dài thì dùng separator nhỏ hơn
+                chunks.extend(self._split(piece, rest))
+                buffer = ""
+            else:
+                buffer = piece
+        if buffer:
+            chunks.append(buffer)
+        return [chunk.strip() for chunk in chunks if chunk.strip()]
 
 
 def _dot(a: list[float], b: list[float]) -> float:
@@ -86,13 +123,29 @@ def compute_similarity(vec_a: list[float], vec_b: list[float]) -> float:
 
     Returns 0.0 if either vector has zero magnitude.
     """
-    # TODO: implement cosine similarity formula
-    raise NotImplementedError("Implement compute_similarity")
+    norm_a = math.sqrt(_dot(vec_a, vec_a))
+    norm_b = math.sqrt(_dot(vec_b, vec_b))
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
+    return _dot(vec_a, vec_b) / (norm_a * norm_b)
 
 
 class ChunkingStrategyComparator:
     """Run all built-in chunking strategies and compare their results."""
 
     def compare(self, text: str, chunk_size: int = 200) -> dict:
-        # TODO: call each chunker, compute stats, return comparison dict
-        raise NotImplementedError("Implement ChunkingStrategyComparator.compare")
+        strategies = {
+            "fixed_size": FixedSizeChunker(chunk_size=chunk_size, overlap=chunk_size // 10),
+            "by_sentences": SentenceChunker(max_sentences_per_chunk=3),
+            "recursive": RecursiveChunker(chunk_size=chunk_size),
+        }
+        result = {}
+        for name, chunker in strategies.items():
+            chunks = chunker.chunk(text)
+            count = len(chunks)
+            result[name] = {
+                "count": count,
+                "avg_length": sum(len(c) for c in chunks) / count if count else 0.0,
+                "chunks": chunks,
+            }
+        return result
