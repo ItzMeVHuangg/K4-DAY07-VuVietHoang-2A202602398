@@ -108,7 +108,7 @@ Mỗi nhóm chọn một chủ đề (domain) và chuẩn bị bộ tài liệu:
 > - `pip install pymupdf4llm` → `pymupdf4llm.to_markdown("input.pdf")` (nhanh, đơn giản)
 > - Hoặc sao chép-dán (copy-paste) nội dung từ PDF/web vào file `.txt`
 
-**Chủ đề nhóm chọn:** Học bổng đại học (mảng "dịch vụ/quy định đại học" của L3A). Bộ tài liệu: `data/university/` — 9 file `.md` + `sources.csv`.
+**Chủ đề nhóm chọn:** Học bổng đại học (mảng "dịch vụ/quy định đại học" của L3A). Bộ tài liệu: `data/hoc-bong/` — 9 file `.md` + `sources.csv`.
 
 Ghi vào bảng:
 
@@ -251,7 +251,7 @@ Mỗi nhóm viết **đúng 5 câu hỏi đánh giá** kèm theo **câu trả l�
 - Câu trả lời chuẩn phải cụ thể và có thể kiểm chứng (verify) từ tài liệu
 - Ít nhất 1 câu hỏi yêu cầu lọc bằng metadata (metadata filtering) để trả lời tốt
 
-**Đối chiếu yêu cầu:** 5 dạng hỏi khác nhau (tra số liệu, giá trị + đối tượng, điều kiện, mốc thời gian, quy trình không nêu người hỏi); mọi gold answer trích nguyên văn từ tài liệu trong `data/university/`; Q5 cần filter vì cùng một trang VIMARU có hai tài liệu cùng chủ đề nhưng khác đối tượng (sinh viên / cán bộ).
+**Đối chiếu yêu cầu:** 5 dạng hỏi khác nhau (tra số liệu, giá trị + đối tượng, điều kiện, mốc thời gian, quy trình không nêu người hỏi); mọi gold answer trích nguyên văn từ tài liệu trong `data/hoc-bong/`; Q5 cần filter vì cùng một trang VIMARU có hai tài liệu cùng chủ đề nhưng khác đối tượng (sinh viên / cán bộ).
 
 > **Ghi kết quả vào:** Báo cáo — Phần 6 (Kết quả — Câu hỏi đánh giá & Câu trả lời chuẩn)
 

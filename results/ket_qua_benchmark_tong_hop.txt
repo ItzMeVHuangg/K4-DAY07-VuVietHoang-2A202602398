@@ -1,0 +1,7 @@
+Bảng tổng hợp — embedder sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2, chunk_size=500, top_k=3. Mỗi ô: theo doc_id / theo nội dung.
+| Chiến lược | Số chunk / dài TB | Q1 | Q2 | Q3 | Q4 | Q5 | Q1 không filter | Tổng doc_id | Tổng nội dung |
+|---|---|---|---|---|---|---|---|---|---|
+| fixed_size | 80 / 481 | 2/0 | 2/0 | 2/0 | 1/1 | 2/2 | 2/0 | 9/10 | 3/10 |
+| by_sentences | 90 / 386 | 2/0 | 2/0 | 2/0 | 1/1 | 2/2 | 2/0 | 9/10 | 3/10 |
+| recursive | 109 / 319 | 2/0 | 2/0 | 2/0 | 2/0 | 2/0 | 2/0 | 10/10 | 0/10 |
+| heading | 144 / 349 | 2/0 | 2/2 | 2/0 | 2/0 | 2/2 | 2/0 | 10/10 | 4/10 |

@@ -149,7 +149,7 @@ Embedder: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`. Dự đ
 
 ## 5. Kết quả truy xuất của tôi (Competition Results) — Cá nhân (10 điểm)
 
-Chiến lược của tôi: `HeadingChunker(max_chunk_size=250, prepend_title=True)` — tách theo tiêu đề `##`/`###`, section dài hơn 250 ký tự thì hạ xuống `RecursiveChunker`, và gắn tiêu đề tài liệu vào đầu mọi chunk. Embedder `paraphrase-multilingual-MiniLM-L12-v2`, top-3, corpus `data/university` (9 tài liệu → 202 chunk). Agent chạy với LLM giả trích ngữ cảnh top-1 (nhóm không có API key LLM), nên cột "Câu trả lời" phản ánh đúng những gì agent nhận được làm căn cứ. Chi tiết đầy đủ: `ket_qua_benchmark.txt`.
+Chiến lược của tôi: `HeadingChunker(max_chunk_size=250, prepend_title=True)` — tách theo tiêu đề `##`/`###`, section dài hơn 250 ký tự thì hạ xuống `RecursiveChunker`, và gắn tiêu đề tài liệu vào đầu mọi chunk. Embedder `paraphrase-multilingual-MiniLM-L12-v2`, top-3, corpus `data/hoc-bong` (9 tài liệu → 202 chunk). Agent chạy với LLM giả trích ngữ cảnh top-1 (nhóm không có API key LLM), nên cột "Câu trả lời" phản ánh đúng những gì agent nhận được làm căn cứ. Chi tiết đầy đủ: `ket_qua_benchmark.txt`.
 
 | # | Câu hỏi (Query) | Top-1 Chunk truy xuất được (tóm tắt) | Điểm Score | Có liên quan không? (Relevant) | Câu trả lời của Agent (tóm tắt) |
 |---|-------|--------------------------------|-------|-----------|------------------------|
@@ -171,7 +171,7 @@ A/B với câu cần filter (Q5): không filter, top-1 là tài liệu **dành c
 Đề xuất cải thiện: dùng embedder mạnh hơn và có cửa sổ dài hơn (ví dụ `text-embedding-3-small`/`gemini-embedding-001`), tăng top-k rồi rerank, hoặc chuyển bảng số liệu thành câu văn đầy đủ ("Quyết định cấp học bổng KKHT học kỳ đầu năm 2026: 18/5/2026") trước khi embed.
 
 **Điều hay nhất tôi học được từ thành viên khác / nhóm khác (qua demo):**
-> [Điền sau buổi demo.]
+> Khi so sánh với chiến lược của các thành viên khác trên cùng 5 câu hỏi, tôi nhận ra không có chiến lược nào thắng tuyệt đối: `SentenceChunker(3)` — chiến lược tôi đánh giá thấp nhất ở bước baseline — lại là cấu hình duy nhất lấy được tiêu chí điểm của học bổng TOTO (Q3), còn `RecursiveChunker(500)` gắn thêm tiêu đề là cấu hình duy nhất lấy được ngày quyết định của UEH (Q4), trong khi chiến lược theo heading của tôi chỉ thắng ở Q1. Bài học lớn nhất là yếu tố quyết định không nằm ở cách cắt mà ở việc chunk có tự mang đủ ngữ cảnh hay không: chỉ cần gắn tiêu đề tài liệu vào mỗi chunk, `Recursive(500)` tăng từ 0 lên 2/10 — ngang chiến lược custom của tôi. Nếu làm lại, tôi sẽ thử kết hợp (chunk theo heading + gắn tiêu đề + overlap giữa các mảnh con) thay vì chỉ tối ưu một chiến lược riêng lẻ.
 
 ---
 

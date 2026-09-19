@@ -149,3 +149,55 @@ class ChunkingStrategyComparator:
                 "chunks": chunks,
             }
         return result
+
+
+class HeadingChunker:
+    """
+    Split Markdown text by headings (custom strategy of the group, required by K4-L3A).
+
+    Each section (the text under one heading) becomes a chunk, prefixed with its heading
+    path (document title + parent headings) so a short section still says which document
+    and which part it belongs to. Sections longer than chunk_size are split further with
+    RecursiveChunker and the heading path is re-attached to every piece.
+    """
+
+    HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
+
+    def __init__(self, chunk_size: int = 500) -> None:
+        self.chunk_size = chunk_size
+
+    def chunk(self, text: str) -> list[str]:
+        if not text or not text.strip():
+            return []
+        chunks: list[str] = []
+        path: list[tuple[int, str]] = []  # heading of the current section + its parent headings
+        body_lines: list[str] = []
+
+        def flush() -> None:
+            body = "\n".join(body_lines).strip()
+            if body:
+                chunks.extend(self._section_chunks([line for _, line in path], body))
+            body_lines.clear()
+
+        for line in text.splitlines():
+            match = self.HEADING_PATTERN.match(line)
+            if not match:
+                body_lines.append(line)
+                continue
+            flush()  # a new heading closes the previous section
+            level = len(match.group(1))
+            while path and path[-1][0] >= level:  # drop headings of the same or deeper level
+                path.pop()
+            path.append((level, line.strip()))
+        flush()
+        return chunks
+
+    def _section_chunks(self, headings: list[str], body: str) -> list[str]:
+        prefix = "\n".join(headings)
+        whole = f"{prefix}\n{body}" if prefix else body
+        if len(whole) <= self.chunk_size:
+            return [whole]
+        # Section too long: split the body with RecursiveChunker and re-attach the heading path to EVERY piece
+        body_budget = max(100, self.chunk_size - len(prefix) - 1)
+        pieces = RecursiveChunker(chunk_size=body_budget).chunk(body)
+        return [f"{prefix}\n{piece}" if prefix else piece for piece in pieces]

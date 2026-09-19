@@ -1,14 +1,22 @@
-"""Benchmark retrieval trên corpus data/university — Lab 07 K4-L3A.
+"""Benchmark retrieval trên corpus data/hoc-bong — Lab 07 K4-L3A, nhóm Violet.
 
-Chạy:  python bench.py
-Kết quả in ra màn hình và ghi vào ket_qua_benchmark.txt.
+Cách chạy:
+    python bench.py                      # chạy chiến lược ở dòng STRATEGY bên dưới
+    python bench.py --strategy heading   # chạy một chiến lược bất kỳ
+    python bench.py --strategy all       # chạy cả 4 chiến lược + bảng tổng hợp
+    python bench.py --baseline           # bảng baseline ChunkingStrategyComparator (+ heading)
 
-Mỗi thành viên CHỈ đổi dòng `CHUNKER = ...` sang chiến lược của mình;
-mọi thứ khác giữ nguyên để so sánh công bằng trong nhóm.
+Kết quả:
+    ket_qua_benchmark.txt                        # lần chạy chiến lược của mình (deliverable)
+    results/ket_qua_benchmark_<chiến lược>.txt   # output đầy đủ từng chiến lược
+    results/ket_qua_benchmark_tong_hop.txt       # bảng tổng hợp khi chạy --strategy all
+
+Mỗi thành viên CHỈ đổi dòng `STRATEGY = ...`; mọi thứ khác giữ nguyên để so sánh công bằng.
 """
 
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import sys
@@ -17,7 +25,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from src.agent import KnowledgeBaseAgent
-from src.chunking import FixedSizeChunker, RecursiveChunker, SentenceChunker
+from src.chunking import (
+    ChunkingStrategyComparator,
+    FixedSizeChunker,
+    HeadingChunker,
+    RecursiveChunker,
+    SentenceChunker,
+)
 from src.embeddings import (
     EMBEDDING_PROVIDER_ENV,
     GEMINI_EMBEDDING_MODEL,
@@ -31,125 +45,91 @@ from src.embeddings import (
 from src.models import Document
 from src.store import EmbeddingStore
 
-DATA_DIR = Path("data/university")
+DATA_DIR = Path("data/hoc-bong")
+RESULTS_DIR = Path("results")
 OUTPUT_FILE = Path("ket_qua_benchmark.txt")
+CHUNK_SIZE = 500
 TOP_K = 3
 
-
-class HeadingChunker:
-    """Chunk theo tiêu đề Markdown: mỗi section (## / ###) là một chunk.
-
-    Lý do: thông báo học bổng được biên soạn theo mục (Đối tượng, Giá trị, Hồ sơ, Thời hạn...),
-    mỗi mục đã là một đơn vị ngữ nghĩa trọn vẹn. Section dài quá ngưỡng thì hạ xuống
-    RecursiveChunker và gắn lại tiêu đề vào đầu từng mảnh con để không mất ngữ cảnh.
-
-    prepend_title=True: gắn thêm tiêu đề tài liệu (dòng '# ...') vào đầu MỌI chunk. Section
-    như "## 2. Giá trị học bổng" không nhắc tên học bổng/tên trường, nên nếu thiếu tiêu đề
-    thì embedding không biết chunk đó thuộc học bổng nào.
-    """
-
-    def __init__(self, max_chunk_size: int = 800, prepend_title: bool = False) -> None:
-        self.max_chunk_size = max_chunk_size
-        self.prepend_title = prepend_title
-        self._fallback = RecursiveChunker(chunk_size=max_chunk_size)
-
-    def chunk(self, text: str) -> list[str]:
-        chunks = self._chunk_sections(text)
-        title_match = re.match(r"# (.+)", text.strip())
-        if not self.prepend_title or not title_match:
-            return chunks
-        title = f"[{title_match.group(1).strip()}]"
-        return [chunk if chunk.startswith("# ") else f"{title}\n{chunk}" for chunk in chunks]
-
-    def _chunk_sections(self, text: str) -> list[str]:
-        sections = re.split(r"\n(?=#{1,6} )", text.strip())
-        chunks: list[str] = []
-        pending_heading = ""
-        for section in sections:
-            section = section.strip()
-            if not section:
-                continue
-            if pending_heading:
-                section = f"{pending_heading}\n{section}"
-                pending_heading = ""
-            if section.startswith("#") and "\n" not in section:
-                # Heading cha không có nội dung riêng -> gộp vào section con kế tiếp
-                pending_heading = section
-                continue
-            if len(section) <= self.max_chunk_size:
-                chunks.append(section)
-                continue
-            heading = section.splitlines()[0] if section.startswith("#") else ""
-            body = section[len(heading):].strip() if heading else section
-            for piece in self._fallback.chunk(body):
-                chunks.append(f"{heading}\n{piece}" if heading else piece)
-        if pending_heading:
-            chunks.append(pending_heading)
-        return chunks
-
-
 # ===== MỖI THÀNH VIÊN CHỈ ĐỔI DÒNG NÀY =====
-CHUNKER = HeadingChunker(max_chunk_size=250, prepend_title=True)
-# CHUNKER = FixedSizeChunker(chunk_size=500, overlap=100)
-# CHUNKER = RecursiveChunker(chunk_size=500)
-# CHUNKER = SentenceChunker(max_sentences_per_chunk=3)
+# "heading" (Nguyễn Văn Quốc Việt) | "recursive" (Nguyễn Phát Thịnh)
+# "fixed_size" (Lê Nguyễn Thái Dương) | "by_sentences" (Vũ Việt Hoàng)
+STRATEGY = "by_sentences"
 # ============================================
 
-# 5 câu hỏi benchmark chung của nhóm.
-#   gold_doc : doc_id của tài liệu chứa đáp án
-#   key      : chuỗi đặc trưng PHẢI xuất hiện trong ngữ cảnh truy xuất được (chấm mức nội dung)
-#   filter   : metadata_filter dùng khi chạy; câu có filter sẽ được chạy A/B (có / không filter)
+STRATEGIES = {
+    "fixed_size": lambda: FixedSizeChunker(chunk_size=CHUNK_SIZE, overlap=50),
+    "by_sentences": lambda: SentenceChunker(max_sentences_per_chunk=3),
+    "recursive": lambda: RecursiveChunker(chunk_size=CHUNK_SIZE),
+    "heading": lambda: HeadingChunker(chunk_size=CHUNK_SIZE),
+}
+
+# 5 câu hỏi benchmark chung của nhóm (REPORT_NHOM mục 3).
+#   gold_doc : tài liệu chứa đáp án
+#   evidence : câu bằng chứng lấy từ đoạn gold — chunk "liên quan" = đúng gold_doc VÀ chứa câu này
+#   filter   : metadata_filter; câu có filter được chạy thêm bản không filter để A/B
 QUERIES = [
     {
-        "query": "Học bổng Vallet sau đại học năm 2026 có bao nhiêu suất và mỗi suất trị giá bao nhiêu?",
-        "gold": "42 suất, mỗi suất 34.000.000 VNĐ",
-        "gold_doc": "vallet-hoc-bong-sau-dai-hoc",
-        "key": "34.000.000",
-        "filter": None,
-    },
-    {
-        "query": "Học bổng Vững tương lai loại A trị giá bao nhiêu và dành cho ai?",
-        "gold": "130 suất, 20.000.000 VNĐ/suất; HSSV đạt chuẩn loại B và có thành tích xuất sắc, tiêu biểu / thủ khoa đầu vào / hoàn cảnh đặc biệt khó khăn",
-        "gold_doc": "neu-hoc-bong-vung-tuong-lai-2025-2026",
-        "key": "20.000.000",
-        "filter": None,
-    },
-    {
-        "query": "Điều kiện điểm học tập để xét học bổng TOTO ở Đại học Ngoại thương là gì?",
-        "gold": "Điểm TBC năm học 2025-2026 từ 7.0/10 hoặc 2.8/4 trở lên; tích lũy tối thiểu 28 tín chỉ/năm học",
-        "gold_doc": "ftu-hoc-bong-toto-2026",
-        "key": "28 tín chỉ",
-        "filter": None,
-    },
-    {
-        "query": "Khi nào UEH ra quyết định cấp học bổng khuyến khích học tập học kỳ đầu năm 2026?",
-        "gold": "18/5/2026 (học kỳ cuối năm 2026: 10/11/2026)",
-        "gold_doc": "ueh-ke-hoach-xet-hoc-bong-2026",
-        "key": "18/5/2026",
-        "filter": None,
-    },
-    {
-        "query": "Học bổng khuyến khích học tập ở VIMARU được xét như thế nào?",
-        "gold": "Loại Khá: 2.50 ≤ ĐTBHB < 3.20, rèn luyện từ 70; Giỏi: 3.20 ≤ ĐTBHB < 3.60, từ 80; Xuất sắc: ĐTBHB ≥ 3.60, từ 90 đến 100",
+        "id": "Q1",
+        "query": "Học bổng khuyến khích học tập ở Viện Cơ khí VIMARU được xét như thế nào?",
+        "gold": "Loại Khá 2.50 ≤ ĐTBHB < 3.20 và rèn luyện từ 70; Giỏi 3.20 ≤ ĐTBHB < 3.60 và từ 80; "
+        "Xuất sắc ĐTBHB ≥ 3.60 và từ 90 đến 100 (kèm điều kiện vào diện xét).",
         "gold_doc": "vimaru-hbkkht-tieu-chuan-sinh-vien",
-        "key": "3.20",
+        "evidence": "3.20 ≤ ĐTBHB < 3.60",
         "filter": {"audience": "student"},
+    },
+    {
+        "id": "Q2",
+        "query": "Học bổng Vallet dành cho học viên sau đại học năm 2026 có bao nhiêu suất và mỗi suất trị giá bao nhiêu?",
+        "gold": "42 suất dành cho học viên cao học và nghiên cứu sinh; mỗi suất 34.000.000 VNĐ.",
+        "gold_doc": "vallet-hoc-bong-sau-dai-hoc",
+        "evidence": "42 suất",
+        "filter": None,
+    },
+    {
+        "id": "Q3",
+        "query": "Quy trình xét học bổng hỗ trợ đột xuất của UEH gồm những bước nào và mất bao lâu?",
+        "gold": "4 bước: tiếp nhận yêu cầu; kiểm tra, yêu cầu bổ sung minh chứng (03–05 ngày làm việc); "
+        "trình xin ý kiến Ban Giám đốc (01–03 ngày làm việc); chi trả, cấn trừ học phí (05–10 ngày làm việc).",
+        "gold_doc": "ueh-ke-hoach-xet-hoc-bong-2026",
+        "evidence": "Trình xin ý kiến Ban Giám đốc",
+        "filter": None,
+    },
+    {
+        "id": "Q4",
+        "query": "Hồ sơ đăng ký học bổng K-T của ULIS gồm những giấy tờ gì?",
+        "gold": "Bản tự giới thiệu; bảng điểm 2024-2025; minh chứng hoàn cảnh khó khăn; bài viết tìm hiểu Quỹ K-T; "
+        "bài phát biểu cảm tưởng; bản photo giấy chứng nhận thành tích (nếu có); kèm bản mềm 1 file pdf.",
+        "gold_doc": "ulis-hoc-bong-kt-2025-2026",
+        "evidence": "Bài phát biểu cảm tưởng",
+        "filter": None,
+    },
+    {
+        "id": "Q5",
+        "query": "Tân sinh viên HSB muốn được tài trợ 100% học phí có điều kiện thì cần điểm thi bao nhiêu và phải hoàn trả thế nào?",
+        "gold": "Điểm tổ hợp THPT từ 24/30 (không môn nào dưới 7) hoặc ĐGNL ĐHQGHN từ 90/150; "
+        "trả lại học phí cho Quỹ Học bổng HSB trong vòng 10 năm kể từ khi ra trường.",
+        "gold_doc": "hsb-hoc-bong-tan-sinh-vien-2026",
+        "evidence": "24/30",
+        "filter": None,
     },
 ]
 
 
 class Tee:
-    """In ra màn hình đồng thời ghi vào file kết quả."""
+    """In ra màn hình đồng thời ghi vào một hoặc nhiều file."""
 
-    def __init__(self, path: Path) -> None:
-        self.file = path.open("w", encoding="utf-8")
+    def __init__(self, *paths: Path) -> None:
+        self.files = [path.open("w", encoding="utf-8") for path in paths]
 
     def __call__(self, text: str = "") -> None:
         print(text)
-        self.file.write(text + "\n")
+        for file in self.files:
+            file.write(text + "\n")
 
     def close(self) -> None:
-        self.file.close()
+        for file in self.files:
+            file.close()
 
 
 def parse_markdown(path: Path) -> tuple[dict[str, str], str]:
@@ -239,76 +219,147 @@ class FilteredStore:
         return self.store.search_with_filter(query, top_k=top_k, metadata_filter=self.metadata_filter)
 
 
-def score_query(results: list[dict], gold_doc: str, key: str) -> tuple[int, bool, bool]:
-    """2đ: gold ở top-1 và ngữ cảnh chứa đáp án; 1đ: ngữ cảnh chứa đáp án nhưng gold không ở top-1; 0đ: không."""
-    doc_hit = any(r["metadata"]["doc_id"] == gold_doc for r in results)
-    content_hit = any(key in r["content"] for r in results)
-    if not content_hit:
-        return 0, doc_hit, content_hit
-    top1_ok = bool(results) and results[0]["metadata"]["doc_id"] == gold_doc and key in results[0]["content"]
-    return (2 if top1_ok else 1), doc_hit, content_hit
+def gold_rank(results: list[dict], gold_doc: str) -> int | None:
+    return next((rank for rank, r in enumerate(results, start=1) if r["metadata"]["doc_id"] == gold_doc), None)
 
 
-def print_results(out: Tee, results: list[dict]) -> None:
+def score_doc_level(top: list[dict], gold_doc: str) -> int:
+    """Chấm theo doc_id (dễ dãi): tài liệu gold ở top-1 = 2đ, ở top-2/3 = 1đ, không có = 0đ."""
+    rank = gold_rank(top, gold_doc)
+    return 0 if rank is None else (2 if rank == 1 else 1)
+
+
+def score_content_level(top: list[dict], gold_doc: str, evidence: str) -> int:
+    """Chấm theo nội dung: như doc_id NHƯNG top-3 phải có chunk của tài liệu gold chứa câu bằng chứng."""
+    relevant = any(r["metadata"]["doc_id"] == gold_doc and evidence in r["content"] for r in top)
+    return score_doc_level(top, gold_doc) if relevant else 0
+
+
+def evidence_rank(ranking: list[dict], gold_doc: str, evidence: str) -> int | None:
+    """Hạng của chunk chứa câu bằng chứng trong toàn bộ bảng xếp hạng (để biết trượt xa cỡ nào)."""
+    return next(
+        (rank for rank, r in enumerate(ranking, start=1) if r["metadata"]["doc_id"] == gold_doc and evidence in r["content"]),
+        None,
+    )
+
+
+def print_top(out: Tee, results: list[dict]) -> None:
     for rank, result in enumerate(results, start=1):
         preview = " ".join(result["content"].split())[:140]
-        out(f"    {rank}. score={result['score']:.3f}  doc_id={result['metadata']['doc_id']}  ({result['id']})")
+        out(f"    {rank}. score={result['score']:.3f}  {result['id']}  [audience={result['metadata'].get('audience')}]")
         out(f"       {preview}...")
 
 
-def main() -> int:
-    load_dotenv(override=False)
-    if not DATA_DIR.is_dir():
-        print(f"Không thấy thư mục {DATA_DIR}")
-        return 1
+def run_query(out: Tee, store: EmbeddingStore, item: dict, metadata_filter: dict | None, label: str) -> tuple[int, int]:
+    ranking = store.search_with_filter(item["query"], top_k=store.get_collection_size(), metadata_filter=metadata_filter)
+    top = ranking[:TOP_K]
+    out(f"\n=== {label}: {item['query']}")
+    out(f"    Filter: {metadata_filter}")
+    print_top(out, top)
+    doc_pts = score_doc_level(top, item["gold_doc"])
+    content_pts = score_content_level(top, item["gold_doc"], item["evidence"])
+    rank = evidence_rank(ranking, item["gold_doc"], item["evidence"])
+    out(f"    -> chấm theo doc_id: {doc_pts}/2 | chấm theo nội dung: {content_pts}/2 | chunk chứa '{item['evidence']}' ở hạng {rank}")
+    return doc_pts, content_pts
 
-    out = Tee(OUTPUT_FILE)
-    embedder = build_embedder()
-    llm_fn, llm_name = build_llm()
-    documents = load_documents(CHUNKER)
-    store = EmbeddingStore(collection_name="bench", embedding_fn=embedder)
+
+def run_strategy(name: str, embedder, llm_fn, llm_name: str, output_paths: list[Path]) -> dict:
+    chunker = STRATEGIES[name]()
+    documents = load_documents(chunker)
+    store = EmbeddingStore(collection_name=f"bench-{name}", embedding_fn=embedder)
     store.add_documents(documents)
-
     lengths = [len(d.content) for d in documents]
-    params = {k: v for k, v in vars(CHUNKER).items() if not k.startswith("_")}
-    out(f"Chunker          : {CHUNKER.__class__.__name__} {params}")
+
+    out = Tee(*output_paths)
+    out(f"Chiến lược       : {name} ({chunker.__class__.__name__})")
     out(f"Embedding backend: {getattr(embedder, '_backend_name', embedder.__class__.__name__)}")
     out(f"LLM              : {llm_name}")
-    out(f"Corpus           : {DATA_DIR} — {len(set(d.metadata['doc_id'] for d in documents))} tài liệu, {store.get_collection_size()} chunk, độ dài TB {sum(lengths) / max(len(lengths), 1):.0f} ký tự")
+    out(f"Corpus           : {DATA_DIR} — {len(set(d.metadata['doc_id'] for d in documents))} tài liệu, "
+        f"{store.get_collection_size()} chunk, độ dài TB {sum(lengths) / max(len(lengths), 1):.0f} ký tự, top_k={TOP_K}")
 
-    total = doc_level = content_level = 0
-    for number, item in enumerate(QUERIES, start=1):
-        out(f"\n=== Q{number}: {item['query']}")
-        out(f"    Gold: {item['gold']}  [doc: {item['gold_doc']}, key: '{item['key']}']")
-        out(f"    Filter: {item['filter']}")
-        results = store.search_with_filter(item["query"], top_k=TOP_K, metadata_filter=item["filter"])
-        print_results(out, results)
-        points, doc_hit, content_hit = score_query(results, item["gold_doc"], item["key"])
-        total += points
-        doc_level += doc_hit
-        content_level += content_hit
-        out(f"    -> gold doc trong top-3: {'CÓ' if doc_hit else 'KHÔNG'} | đáp án trong ngữ cảnh: {'CÓ' if content_hit else 'KHÔNG'} | điểm: {points}/2")
-
+    row = {"strategy": name, "chunks": len(documents), "avg_len": sum(lengths) / max(len(lengths), 1), "cells": {}}
+    doc_total = content_total = 0
+    for item in QUERIES:
+        out(f"\n    Gold ({item['id']}): {item['gold']}  [doc: {item['gold_doc']}]")
+        doc_pts, content_pts = run_query(out, store, item, item["filter"], item["id"])
+        doc_total += doc_pts
+        content_total += content_pts
+        row["cells"][item["id"]] = (doc_pts, content_pts)
         answer = KnowledgeBaseAgent(store=FilteredStore(store, item["filter"]), llm_fn=llm_fn).answer(item["query"], top_k=TOP_K)
-        out(f"    Agent: {' '.join(answer.split())[:400]}")
-
+        out(f"    Agent: {' '.join(answer.split())[:500]}")
         if item["filter"]:
-            out("\n    --- A/B: cùng câu hỏi, KHÔNG filter ---")
-            unfiltered = store.search(item["query"], top_k=TOP_K)
-            print_results(out, unfiltered)
-            points_nf, doc_nf, content_nf = score_query(unfiltered, item["gold_doc"], item["key"])
-            out(f"    -> không filter: gold doc trong top-3: {'CÓ' if doc_nf else 'KHÔNG'} | đáp án trong ngữ cảnh: {'CÓ' if content_nf else 'KHÔNG'} | điểm: {points_nf}/2")
-            same = [r["id"] for r in results] == [r["id"] for r in unfiltered]
-            out(f"    -> top-3 có filter và không filter {'GIỐNG HỆT (câu hỏi chưa thực sự cần filter)' if same else 'KHÁC NHAU'}")
+            out(f"\n    --- A/B: {item['id']} KHÔNG filter ---")
+            row["cells"][f"{item['id']} không filter"] = run_query(out, store, item, None, f"{item['id']} không filter")
+            answer_nf = KnowledgeBaseAgent(store=store, llm_fn=llm_fn).answer(item["query"], top_k=TOP_K)
+            out(f"    Agent (không filter): {' '.join(answer_nf.split())[:500]}")
 
     out("\n=== TỔNG KẾT")
-    out(f"    Chấm theo doc_id (gold doc trong top-3)   : {doc_level}/{len(QUERIES)}")
-    out(f"    Chấm theo nội dung (đáp án trong ngữ cảnh): {content_level}/{len(QUERIES)}")
-    out(f"    Điểm retrieval (thang 2đ/câu)             : {total}/{2 * len(QUERIES)}")
+    out(f"    Chấm theo doc_id   : {doc_total}/{2 * len(QUERIES)}")
+    out(f"    Chấm theo nội dung : {content_total}/{2 * len(QUERIES)}   <- điểm dùng để chấm")
     if embedder is _mock_embed:
         out("    LƯU Ý: đang dùng MockEmbedder (không có ngữ nghĩa) — số liệu retrieval chỉ là nhiễu.")
     out.close()
-    print(f"\nĐã ghi kết quả vào {OUTPUT_FILE}")
+    row["doc_total"], row["content_total"] = doc_total, content_total
+    return row
+
+
+def write_summary(rows: list[dict], embedder) -> None:
+    columns = [q["id"] for q in QUERIES] + [f"{q['id']} không filter" for q in QUERIES if q["filter"]]
+    out = Tee(RESULTS_DIR / "ket_qua_benchmark_tong_hop.txt")
+    out(f"Bảng tổng hợp — embedder {getattr(embedder, '_backend_name', embedder.__class__.__name__)}, "
+        f"chunk_size={CHUNK_SIZE}, top_k={TOP_K}. Mỗi ô: theo doc_id / theo nội dung.")
+    out("| Chiến lược | Số chunk / dài TB | " + " | ".join(columns) + " | Tổng doc_id | Tổng nội dung |")
+    out("|" + "---|" * (len(columns) + 4))
+    for row in rows:
+        cells = " | ".join(f"{row['cells'][c][0]}/{row['cells'][c][1]}" for c in columns)
+        out(f"| {row['strategy']} | {row['chunks']} / {row['avg_len']:.0f} | {cells} | "
+            f"{row['doc_total']}/{2 * len(QUERIES)} | {row['content_total']}/{2 * len(QUERIES)} |")
+    out.close()
+
+
+def run_baseline() -> None:
+    """Bảng baseline: ChunkingStrategyComparator (chunk_size=500) + dòng heading để so sánh."""
+    documents = ["hsb-hoc-bong-tan-sinh-vien-2026", "ueh-ke-hoach-xet-hoc-bong-2026", "vimaru-hbkkht-tieu-chuan-sinh-vien"]
+    print("| Tài liệu | Chiến lược | Số chunk | Độ dài TB (min–max) |")
+    print("|---|---|---|---|")
+    for doc_id in documents:
+        _, body = parse_markdown(DATA_DIR / f"{doc_id}.md")
+        results = ChunkingStrategyComparator().compare(body, chunk_size=CHUNK_SIZE)
+        results["heading"] = {"chunks": HeadingChunker(chunk_size=CHUNK_SIZE).chunk(body)}
+        for strategy, stats in results.items():
+            lengths = [len(c) for c in stats["chunks"]]
+            print(f"| `{doc_id}` | {strategy} | {len(lengths)} | {sum(lengths) / len(lengths):.1f} ({min(lengths)}–{max(lengths)}) |")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Benchmark retrieval trên corpus học bổng.")
+    parser.add_argument("--strategy", choices=[*STRATEGIES, "all"], default=STRATEGY)
+    parser.add_argument("--baseline", action="store_true", help="In bảng baseline rồi thoát")
+    args = parser.parse_args()
+
+    if not DATA_DIR.is_dir():
+        print(f"Không thấy thư mục {DATA_DIR}")
+        return 1
+    if args.baseline:
+        run_baseline()
+        return 0
+
+    load_dotenv(override=False)
+    RESULTS_DIR.mkdir(exist_ok=True)
+    embedder = build_embedder()
+    llm_fn, llm_name = build_llm()
+
+    names = list(STRATEGIES) if args.strategy == "all" else [args.strategy]
+    rows = []
+    for name in names:
+        outputs = [RESULTS_DIR / f"ket_qua_benchmark_{name}.txt"]
+        if name == STRATEGY:
+            outputs.append(OUTPUT_FILE)  # chiến lược của mình -> deliverable ket_qua_benchmark.txt
+        rows.append(run_strategy(name, embedder, llm_fn, llm_name, outputs))
+        print()
+    if len(rows) > 1:
+        write_summary(rows, embedder)
+    print(f"Đã ghi kết quả vào {RESULTS_DIR}/" + (f" và {OUTPUT_FILE}" if STRATEGY in names else ""))
     return 0
 
 

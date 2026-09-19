@@ -1,0 +1,86 @@
+Chiến lược       : recursive (RecursiveChunker)
+Embedding backend: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+LLM              : extractive-demo
+Corpus           : data\hoc-bong — 9 tài liệu, 109 chunk, độ dài TB 319 ký tự, top_k=3
+
+    Gold (Q1): Loại Khá 2.50 ≤ ĐTBHB < 3.20 và rèn luyện từ 70; Giỏi 3.20 ≤ ĐTBHB < 3.60 và từ 80; Xuất sắc ĐTBHB ≥ 3.60 và từ 90 đến 100 (kèm điều kiện vào diện xét).  [doc: vimaru-hbkkht-tieu-chuan-sinh-vien]
+
+=== Q1: Học bổng khuyến khích học tập ở Viện Cơ khí VIMARU được xét như thế nào?
+    Filter: {'audience': 'student'}
+    1. score=0.718  vimaru-hbkkht-tieu-chuan-sinh-vien#0  [audience=student]
+       # Tiêu chuẩn xét học bổng khuyến khích học tập (HBKKHT) cho sinh viên Nguồn: "Quy trình cấp học bổng khuyến khích học tập cho sinh viên", Vi...
+    2. score=0.666  ueh-ke-hoach-xet-hoc-bong-2026#10  [audience=student]
+       ## 3. Học bổng Hỗ trợ học tập (Liên thông chính quy, Vừa làm vừa học) ### 3.1. Đối tượng Sinh viên liên thông Đại học chính quy (LTCQ), sinh...
+    3. score=0.647  ulis-hoc-bong-kt-2025-2026#0  [audience=student]
+       # Thông báo chương trình học bổng K-T năm học 2025-2026 Đơn vị ban hành: Phòng Đào tạo và Người học, Trường Đại học Ngoại ngữ - ĐHQGHN (ULIS...
+    -> chấm theo doc_id: 2/2 | chấm theo nội dung: 0/2 | chunk chứa '3.20 ≤ ĐTBHB < 3.60' ở hạng 49
+    Agent: [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: vimaru-hbkkht-tieu-chuan-sinh-vien) # Tiêu chuẩn xét học bổng khuyến khích học tập (HBKKHT) cho sinh viên Nguồn: "Quy trình cấp học bổng khuyến khích học tập cho sinh viên", Viện Cơ khí, Trường Đại học Hàng hải Việt Nam (VIMARU). File này chứa phần tiêu chuẩn dành cho sinh viên; phần các
+
+    --- A/B: Q1 KHÔNG filter ---
+
+=== Q1 không filter: Học bổng khuyến khích học tập ở Viện Cơ khí VIMARU được xét như thế nào?
+    Filter: None
+    1. score=0.718  vimaru-hbkkht-tieu-chuan-sinh-vien#0  [audience=student]
+       # Tiêu chuẩn xét học bổng khuyến khích học tập (HBKKHT) cho sinh viên Nguồn: "Quy trình cấp học bổng khuyến khích học tập cho sinh viên", Vi...
+    2. score=0.693  vimaru-hbkkht-quy-trinh-xet-duyet#0  [audience=staff]
+       # Quy trình xét duyệt học bổng khuyến khích học tập (HBKKHT) – phần dành cho cán bộ Nguồn: "Quy trình cấp học bổng khuyến khích học tập cho ...
+    3. score=0.666  ueh-ke-hoach-xet-hoc-bong-2026#10  [audience=student]
+       ## 3. Học bổng Hỗ trợ học tập (Liên thông chính quy, Vừa làm vừa học) ### 3.1. Đối tượng Sinh viên liên thông Đại học chính quy (LTCQ), sinh...
+    -> chấm theo doc_id: 2/2 | chấm theo nội dung: 0/2 | chunk chứa '3.20 ≤ ĐTBHB < 3.60' ở hạng 55
+    Agent (không filter): [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: vimaru-hbkkht-tieu-chuan-sinh-vien) # Tiêu chuẩn xét học bổng khuyến khích học tập (HBKKHT) cho sinh viên Nguồn: "Quy trình cấp học bổng khuyến khích học tập cho sinh viên", Viện Cơ khí, Trường Đại học Hàng hải Việt Nam (VIMARU). File này chứa phần tiêu chuẩn dành cho sinh viên; phần các
+
+    Gold (Q2): 42 suất dành cho học viên cao học và nghiên cứu sinh; mỗi suất 34.000.000 VNĐ.  [doc: vallet-hoc-bong-sau-dai-hoc]
+
+=== Q2: Học bổng Vallet dành cho học viên sau đại học năm 2026 có bao nhiêu suất và mỗi suất trị giá bao nhiêu?
+    Filter: None
+    1. score=0.767  vallet-hoc-bong-sau-dai-hoc#0  [audience=student]
+       # Thông báo triển khai chương trình học bổng Vallet dành cho học viên sau đại học miền Bắc năm 2026 Đơn vị ban hành: Tổ chức Khoa học và Giá...
+    2. score=0.742  vallet-hoc-bong-sau-dai-hoc#1  [audience=student]
+       Căn cứ lịch sử hoạt động thường niên của Quỹ học bổng Vallet dành cho học sinh, sinh viên xuất sắc tại Việt Nam từ năm 1993 – 2025 và tình h...
+    3. score=0.714  vallet-hoc-bong-sau-dai-hoc#2  [audience=student]
+       Nhằm khuyến khích, hỗ trợ học viên sau đại học (bao gồm học viên cao học và nghiên cứu sinh – NCS) có thành tích học tập, nghiên cứu xuất sắ...
+    -> chấm theo doc_id: 2/2 | chấm theo nội dung: 0/2 | chunk chứa '42 suất' ở hạng 15
+    Agent: [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: vallet-hoc-bong-sau-dai-hoc) # Thông báo triển khai chương trình học bổng Vallet dành cho học viên sau đại học miền Bắc năm 2026 Đơn vị ban hành: Tổ chức Khoa học và Giáo dục "Gặp gỡ Việt Nam" – Ban điều hành (BĐH) Quỹ học bổng Vallet sau đại học miền Bắc. Số: 02-2026/TB-HBSĐHMB. Hà Nội,
+
+    Gold (Q3): 4 bước: tiếp nhận yêu cầu; kiểm tra, yêu cầu bổ sung minh chứng (03–05 ngày làm việc); trình xin ý kiến Ban Giám đốc (01–03 ngày làm việc); chi trả, cấn trừ học phí (05–10 ngày làm việc).  [doc: ueh-ke-hoach-xet-hoc-bong-2026]
+
+=== Q3: Quy trình xét học bổng hỗ trợ đột xuất của UEH gồm những bước nào và mất bao lâu?
+    Filter: None
+    1. score=0.712  ueh-ke-hoach-xet-hoc-bong-2026#1  [audience=student]
+       Sinh viên Đại học chính quy khóa 48 (Song ngành tích hợp), 49, 50, 51 đạt các điều kiện để xét học bổng Khuyến khích học tập theo chính sách...
+    2. score=0.710  ueh-ke-hoach-xet-hoc-bong-2026#12  [audience=student]
+       | Quy trình | Tiến độ HKĐ2026 | Tiến độ HKC2026 | |---|---|---| | Triển khai thông báo và tiếp nhận đề nghị xét học bổng hỗ trợ học tập UEH ...
+    3. score=0.674  ueh-ke-hoach-xet-hoc-bong-2026#8  [audience=student]
+       | Quy trình | Tiến độ HKĐ2026 | Tiến độ HKC2026 | |---|---|---| | Triển khai thông báo, tiếp nhận đề nghị xét học bổng hỗ trợ học tập UEH củ...
+    -> chấm theo doc_id: 2/2 | chấm theo nội dung: 0/2 | chunk chứa 'Trình xin ý kiến Ban Giám đốc' ở hạng 33
+    Agent: [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: ueh-ke-hoach-xet-hoc-bong-2026) Sinh viên Đại học chính quy khóa 48 (Song ngành tích hợp), 49, 50, 51 đạt các điều kiện để xét học bổng Khuyến khích học tập theo chính sách học bổng của UEH. ### 1.2. Các mốc thời gian thực hiện
+
+    Gold (Q4): Bản tự giới thiệu; bảng điểm 2024-2025; minh chứng hoàn cảnh khó khăn; bài viết tìm hiểu Quỹ K-T; bài phát biểu cảm tưởng; bản photo giấy chứng nhận thành tích (nếu có); kèm bản mềm 1 file pdf.  [doc: ulis-hoc-bong-kt-2025-2026]
+
+=== Q4: Hồ sơ đăng ký học bổng K-T của ULIS gồm những giấy tờ gì?
+    Filter: None
+    1. score=0.669  ulis-hoc-bong-kt-2025-2026#0  [audience=student]
+       # Thông báo chương trình học bổng K-T năm học 2025-2026 Đơn vị ban hành: Phòng Đào tạo và Người học, Trường Đại học Ngoại ngữ - ĐHQGHN (ULIS...
+    2. score=0.614  ulis-hoc-bong-kt-2025-2026#2  [audience=student]
+       ## 4. Hồ sơ đăng ký học bổng...
+    3. score=0.593  vimaru-hbkkht-quy-trinh-xet-duyet#0  [audience=staff]
+       # Quy trình xét duyệt học bổng khuyến khích học tập (HBKKHT) – phần dành cho cán bộ Nguồn: "Quy trình cấp học bổng khuyến khích học tập cho ...
+    -> chấm theo doc_id: 2/2 | chấm theo nội dung: 0/2 | chunk chứa 'Bài phát biểu cảm tưởng' ở hạng 19
+    Agent: [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: ulis-hoc-bong-kt-2025-2026) # Thông báo chương trình học bổng K-T năm học 2025-2026 Đơn vị ban hành: Phòng Đào tạo và Người học, Trường Đại học Ngoại ngữ - ĐHQGHN (ULIS). ## 1. Đối tượng và tiêu chuẩn xét chọn
+
+    Gold (Q5): Điểm tổ hợp THPT từ 24/30 (không môn nào dưới 7) hoặc ĐGNL ĐHQGHN từ 90/150; trả lại học phí cho Quỹ Học bổng HSB trong vòng 10 năm kể từ khi ra trường.  [doc: hsb-hoc-bong-tan-sinh-vien-2026]
+
+=== Q5: Tân sinh viên HSB muốn được tài trợ 100% học phí có điều kiện thì cần điểm thi bao nhiêu và phải hoàn trả thế nào?
+    Filter: None
+    1. score=0.807  hsb-hoc-bong-tan-sinh-vien-2026#7  [audience=student]
+       Trường hợp các thí sinh được xét học bổng có điểm thi tốt nghiệp THPT bằng nhau, xét Thành tích học tập và Thành tích ngoại khóa (như tiêu c...
+    2. score=0.726  hsb-hoc-bong-tan-sinh-vien-2026#13  [audience=student]
+       Danh sách sinh viên nhận học bổng được xét từ cao xuống thấp theo điều kiện nêu trên. Điều kiện duy trì học bổng: điểm trung bình các kỳ tro...
+    3. score=0.722  hsb-hoc-bong-tan-sinh-vien-2026#4  [audience=student]
+       - Đặt nguyện vọng 1 khi đăng kí xét tuyển vào HSB – ĐHQGHN trong kỳ tuyển sinh đại học năm học 2025 – 2026 (BẮT BUỘC). - Kết quả rèn luyện: ...
+    -> chấm theo doc_id: 2/2 | chấm theo nội dung: 0/2 | chunk chứa '24/30' ở hạng 4
+    Agent: [LLM giả — trích ngữ cảnh top-1] [1] (nguồn: hsb-hoc-bong-tan-sinh-vien-2026) Trường hợp các thí sinh được xét học bổng có điểm thi tốt nghiệp THPT bằng nhau, xét Thành tích học tập và Thành tích ngoại khóa (như tiêu chuẩn Học bổng Tân sinh viên tiêu biểu). ### 1.3 Tài trợ học phí toàn phần có điều kiện Mức tài trợ: 100% học phí (t
+
+=== TỔNG KẾT
+    Chấm theo doc_id   : 10/10
+    Chấm theo nội dung : 0/10   <- điểm dùng để chấm
